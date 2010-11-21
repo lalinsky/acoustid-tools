@@ -11,6 +11,7 @@ for name in ('chromaprint', 'libchromaprint'):
         break
 else:
     raise ImportError("couldn't find libchromaprint")
+#_libchromaprint = ctypes.CDLL('/home/lukas/code/acoustid/chromaprint/src/libchromaprint.so.0')
 
 
 _libchromaprint.chromaprint_get_version.argtypes = ()
@@ -33,6 +34,12 @@ _libchromaprint.chromaprint_finish.restype = ctypes.c_int
 
 _libchromaprint.chromaprint_get_fingerprint.argtypes = (ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p))
 _libchromaprint.chromaprint_get_fingerprint.restype = ctypes.c_int
+
+_libchromaprint.chromaprint_decode_fingerprint.argtypes = (ctypes.POINTER(ctypes.c_char), ctypes.c_int, ctypes.POINTER(ctypes.POINTER(ctypes.c_int32)), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.c_int)
+_libchromaprint.chromaprint_decode_fingerprint.restype = ctypes.c_int
+
+_libchromaprint.chromaprint_dealloc.argtypes = (ctypes.c_void_p,)
+_libchromaprint.chromaprint_dealloc.restype = None
 
 
 class Fingerprinter(object):
@@ -57,7 +64,29 @@ class Fingerprinter(object):
 
     def finish(self):
         _libchromaprint.chromaprint_finish(self._ctx)
-        fingerprint = ctypes.c_char_p()
-        _libchromaprint.chromaprint_get_fingerprint(self._ctx, ctypes.byref(fingerprint))
-        return fingerprint.value
+        fingerprint_ptr = ctypes.c_char_p()
+        _libchromaprint.chromaprint_get_fingerprint(self._ctx, ctypes.byref(fingerprint_ptr))
+        fingerprint = fingerprint_ptr.value
+        _libchromaprint.chromaprint_dealloc(fingerprint_ptr)
+        return fingerprint
+
+
+def encode_fingerprint(data, algorithm, base64=True):
+    result_ptr = ctypes.POINTER(ctypes.c_int32)()
+    result_size = ctypes.c_int()
+    algorithm = ctypes.c_int()
+    _libchromaprint.chromaprint_decode_fingerprint(data, len(data), ctypes.byref(result_ptr), ctypes.byref(result_size), ctypes.byref(algorithm), 1 if base64 else 0)
+    result = result_ptr[:result_size.value]
+    _libchromaprint.chromaprint_dealloc(result_ptr)
+    return result, algorithm.value
+
+
+def decode_fingerprint(data, base64=True):
+    result_ptr = ctypes.POINTER(ctypes.c_int32)()
+    result_size = ctypes.c_int()
+    algorithm = ctypes.c_int()
+    _libchromaprint.chromaprint_decode_fingerprint(data, len(data), ctypes.byref(result_ptr), ctypes.byref(result_size), ctypes.byref(algorithm), 1 if base64 else 0)
+    result = result_ptr[:result_size.value]
+    _libchromaprint.chromaprint_dealloc(result_ptr)
+    return result, algorithm.value
 

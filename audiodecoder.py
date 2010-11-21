@@ -1,4 +1,3 @@
-#ffmpeg -i ~/Hudba/Assemblage\ 23/Meta/01\ Decades\ V2.mp3 -f s16be -t 20 -
 
 import subprocess
 import re
@@ -29,12 +28,20 @@ class AudioDecoder(object):
         hours, minutes, seconds = map(int, m.groups())
         length = seconds + 60 * (minutes + 60 * hours)
 
-        m = re.search("Output #0, s16.e, to 'pipe:':\s+Stream #0\.0: Audio: pcm_s16le, (\d+) Hz, ([^,]+), s16", info, re.MULTILINE)
+        m = re.search("Stream #0\.0: Audio: pcm_s16le, (\d+) Hz, ([^,]+), s16", info)
         if m is None:
             raise AudioDecoderError("unable to determine the audio format")
         sample_rate, stereo = m.groups()
 
-        return length, int(sample_rate), 2 if stereo == 'stereo' else 1, data
+        num_channels = 1
+        if stereo == 'stereo':
+            num_channels = 2
+        else:
+            m = re.match('(\d+) channels', stereo)
+            if m is not None:
+                num_channels = int(m.group(1))
+
+        return length, int(sample_rate), num_channels, data
 
         #info = ''
         #print 'Reading stderr'
