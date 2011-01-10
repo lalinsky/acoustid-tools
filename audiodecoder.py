@@ -14,9 +14,9 @@ class AudioDecoder(object):
     def __init__(self, filename):
         self._filename = filename
 
-    def decode(self):
+    def decode(self, duration=120):
         format = 's16le' if sys.byteorder == 'little' else 's16be'
-        process = subprocess.Popen(["ffmpeg", "-i", self._filename, "-f", format, "-t", "60", "-"], stdin=open(os.devnull), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(["ffmpeg", "-i", self._filename, "-f", format, "-t", str(duration), "-"], stdin=open(os.devnull), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         data, info = process.communicate()
 
         if process.returncode != 0:
