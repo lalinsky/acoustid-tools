@@ -2,6 +2,7 @@
 
 import re
 import sys
+import time
 import os
 from chromaprint import Fingerprinter
 from audiodecoder import AudioDecoder
@@ -29,8 +30,10 @@ data['meta'] = '2'
 data['length'] = str(length)
 data['fingerprint'] = fingerprint
 print "=> Looking up fingerprint"
-resp = urllib2.urlopen('http://api.acoustid.org/lookup', urllib.urlencode(data))
+a = time.time()
+resp = urllib2.urlopen('http://api2.acoustid.org/lookup', urllib.urlencode(data))
 tree = ElementTree.parse(resp)
+print time.time() - a
 #ElementTree.dump(tree)
 for result in tree.findall('results/result'):
     print
