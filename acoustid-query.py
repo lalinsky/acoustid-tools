@@ -20,8 +20,6 @@ fpcal = Fingerprinter()
 fpcal.start(sample_rate, num_channels)
 fpcal.feed(data)
 fingerprint = fpcal.finish()
-print fingerprint
-print decode_fingerprint(fingerprint)
 
 import urllib, urllib2
 import json
@@ -36,16 +34,17 @@ print "=> Looking up fingerprint"
 a = time.time()
 resp = urllib2.urlopen('http://api.acoustid.org/v2/lookup', urllib.urlencode(data))
 tree = json.loads(resp.read())
-import pprint
-pprint.pprint(tree)
-print time.time() - a
-#for result in tree.findall('results/result'):
-#    print
-#    print 'Score:', result.find('score').text
-#    print 'ID:', result.find('id').text
-#    for track in result.findall('tracks/track'):
-#        print 'http://musicbrainz.org/track/%s.html' % track.find('id').text
-#        for track in track.findall('recordings'):
-
-
-
+print "=> Request took %.3fs" % (time.time() - a,)
+if tree['results']:
+    for result in tree['results']:
+        print
+        print 'Score:', result['score']
+        print 'ID:', result['id']
+        for recording in result['recordings']:
+            print 'URL: http://musicbrainz.org/track/%s.html' % (recording['id'],)
+            for track in recording['tracks']:
+                print "Track:", track['title']
+                print "Artist:", track['artist']['name']
+                print "Release:", track['medium']['release']['title']
+else:
+    print "No matching fingerprints were found"
